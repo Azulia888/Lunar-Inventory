@@ -85,9 +85,11 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             Intent intent = new Intent(this, AddCategoryActivity.class);
             startActivity(intent);
         } else if (id == R.id.nav_sale_history) {
-            // TODO: Implement
+            Intent intent = new Intent(this, SaleHistoryActivity.class);
+            startActivity(intent);
         } else if (id == R.id.nav_export_sales) {
-            // TODO: Implement
+            Intent intent = new Intent(this, ExportSalesActivity.class);
+            startActivity(intent);
         } else if (id == R.id.nav_export_history) {
             // TODO: Implement
         }

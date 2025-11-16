@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="16dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Export Sales"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:padding="16dp"
+            android:gravity="center" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Export Scope"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:layout_marginTop="16dp" />
+
+        <RadioGroup
+            android:id="@+id/export_scope_group"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp">
+
+            <RadioButton
+                android:id="@+id/radio_current_batch"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Current Sale Batch"
+                android:checked="true" />
+
+            <RadioButton
+                android:id="@+id/radio_full_export"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Full Export (All Batches)" />
+
+        </RadioGroup>
+
+        <CheckBox
+            android:id="@+id/end_batch_checkbox"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="End current batch and start new one"
+            android:layout_marginTop="16dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Export Format"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:layout_marginTop="24dp" />
+
+        <RadioGroup
+            android:id="@+id/export_format_group"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp">
+
+            <RadioButton
+                android:id="@+id/radio_csv"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="CSV"
+                android:checked="true" />
+
+            <RadioButton
+                android:id="@+id/radio_excel"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Excel (XLSX)" />
+
+            <RadioButton
+                android:id="@+id/radio_pdf"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="PDF" />
+
+        </RadioGroup>
+
+        <TextView
+            android:id="@+id/export_info"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text=""
+            android:textSize="14sp"
+            android:layout_marginTop="24dp"
+            android:padding="12dp"
+            android:background="#E0E0E0" />
+
+        <Button
+            android:id="@+id/export_button"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Export Sales"
+            android:layout_marginTop="32dp"
+            style="@style/Widget.Material3.Button" />
+
+    </LinearLayout>
+
+</ScrollView>

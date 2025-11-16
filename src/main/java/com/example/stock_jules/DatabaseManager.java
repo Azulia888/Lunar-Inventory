@@ -305,4 +305,82 @@ public class DatabaseManager {
 
         return result;
     }
+
+    public List<Sale> getAllSales() {
+        List<Sale> sales = new ArrayList<>();
+        Cursor cursor = db.rawQuery(
+                "SELECT s.id_sale, s.sold_price, s.sale_time, s.id_export, s.id_item, i.name " +
+                        "FROM sale s " +
+                        "INNER JOIN item i ON s.id_item = i.id_item " +
+                        "ORDER BY s.sale_time DESC",
+                null);
+
+        while (cursor.moveToNext()) {
+            sales.add(new Sale(
+                    cursor.getInt(0),
+                    cursor.getDouble(1),
+                    cursor.getString(2),
+                    cursor.getInt(3),
+                    cursor.getInt(4),
+                    cursor.getString(5)
+            ));
+        }
+        cursor.close();
+        return sales;
+    }
+
+    public boolean updateSalePrice(int saleId, double newPrice) {
+        ContentValues values = new ContentValues();
+        values.put("sold_price", newPrice);
+        int rows = db.update("sale", values, "id_sale = ?", new String[]{String.valueOf(saleId)});
+        return rows > 0;
+    }
+
+    public boolean deleteSale(int saleId, int itemId) {
+        int rows = db.delete("sale", "id_sale = ?", new String[]{String.valueOf(saleId)});
+
+        if (rows > 0) {
+            db.execSQL("UPDATE item SET total_sold = total_sold - 1, " +
+                    "current_stock = CASE WHEN current_stock >= 0 THEN current_stock + 1 ELSE current_stock END " +
+                    "WHERE id_item = ?", new Object[]{itemId});
+        }
+
+        return rows > 0;
+    }
+
+    public int getCurrentBatchSaleCount() {
+        Cursor cursor = db.rawQuery(
+                "SELECT COUNT(*) FROM sale WHERE id_export = " +
+                        "(SELECT id_export FROM sale_batch ORDER BY id_export DESC LIMIT 1)",
+                null);
+        int count = 0;
+        if (cursor.moveToFirst()) {
+            count = cursor.getInt(0);
+        }
+        cursor.close();
+        return count;
+    }
+
+    public int getTotalSaleCount() {
+        Cursor cursor = db.rawQuery("SELECT COUNT(*) FROM sale", null);
+        int count = 0;
+        if (cursor.moveToFirst()) {
+            count = cursor.getInt(0);
+        }
+        cursor.close();
+        return count;
+    }
+
+    public void createNewBatch() {
+        Cursor cursor = db.rawQuery("SELECT MAX(id_export) FROM sale_batch", null);
+        int nextBatchId = 1;
+        if (cursor.moveToFirst()) {
+            nextBatchId = cursor.getInt(0) + 1;
+        }
+        cursor.close();
+
+        ContentValues values = new ContentValues();
+        values.put("name", "Batch " + nextBatchId);
+        db.insert("sale_batch", null, values);
+    }
 }
