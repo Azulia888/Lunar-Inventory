@@ -1,14 +1,13 @@
 package com.example.stock_jules;
 
 import android.content.Intent;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.TextView;
 
 import androidx.appcompat.app.ActionBarDrawerToggle;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.view.GravityCompat;
@@ -36,11 +35,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
         dbManager = new DatabaseManager(this);
 
-        // Setup toolbar
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        // Setup drawer
         drawerLayout = findViewById(R.id.drawer_layout);
         NavigationView navigationView = findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
@@ -50,7 +47,6 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         drawerLayout.addDrawerListener(toggle);
         toggle.syncState();
 
-        // Setup RecyclerView
         categoryTitle = findViewById(R.id.category_title);
         recyclerView = findViewById(R.id.recycler_view);
         recyclerView.setLayoutManager(new GridLayoutManager(this, 2));
@@ -71,13 +67,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             categoryTitle.setVisibility(View.GONE);
         } else {
             categoryTitle.setVisibility(View.VISIBLE);
-            // Get category name
-            List<Category> allCats = dbManager.getCategories(null, true);
-            for (Category cat : allCats) {
-                if (cat.id == currentCategoryId) {
-                    categoryTitle.setText(cat.name);
-                    break;
-                }
+            Category cat = dbManager.getCategory(currentCategoryId);
+            if (cat != null) {
+                categoryTitle.setText(cat.name);
             }
         }
     }
@@ -90,7 +82,8 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             Intent intent = new Intent(this, AddItemActivity.class);
             startActivity(intent);
         } else if (id == R.id.nav_add_category) {
-            // TODO: Implement
+            Intent intent = new Intent(this, AddCategoryActivity.class);
+            startActivity(intent);
         } else if (id == R.id.nav_sale_history) {
             // TODO: Implement
         } else if (id == R.id.nav_export_sales) {
@@ -101,6 +94,65 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
         drawerLayout.closeDrawer(GravityCompat.START);
         return true;
+    }
+
+    public void editItem(int itemId) {
+        Intent intent = new Intent(this, EditItemActivity.class);
+        intent.putExtra("item_id", itemId);
+        startActivity(intent);
+    }
+
+    public void editCategory(int categoryId) {
+        Intent intent = new Intent(this, EditCategoryActivity.class);
+        intent.putExtra("category_id", categoryId);
+        startActivity(intent);
+    }
+
+    public void deleteItem(int itemId) {
+        new AlertDialog.Builder(this)
+                .setTitle("Delete Item")
+                .setMessage("Are you sure you want to delete this item?")
+                .setPositiveButton("Delete", (dialog, which) -> {
+                    dbManager.deleteItem(itemId);
+                    loadData();
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    public void deleteCategory(int categoryId) {
+        int itemCount = dbManager.countItemsInCategory(categoryId);
+
+        if (itemCount > 0) {
+            new AlertDialog.Builder(this)
+                    .setTitle("Delete Category")
+                    .setMessage("This category contains " + itemCount + " item(s). Are you sure you want to delete it?")
+                    .setPositiveButton("Continue", (dialog, which) -> showFinalDeleteConfirmation(categoryId, itemCount))
+                    .setNegativeButton("Cancel", null)
+                    .show();
+        } else {
+            new AlertDialog.Builder(this)
+                    .setTitle("Delete Category")
+                    .setMessage("Are you sure you want to delete this category?")
+                    .setPositiveButton("Delete", (dialog, which) -> {
+                        dbManager.deleteCategory(categoryId);
+                        loadData();
+                    })
+                    .setNegativeButton("Cancel", null)
+                    .show();
+        }
+    }
+
+    private void showFinalDeleteConfirmation(int categoryId, int itemCount) {
+        new AlertDialog.Builder(this)
+                .setTitle("Final Confirmation")
+                .setMessage("WARNING: All " + itemCount + " item(s) in this category will also be deleted. This action cannot be undone. Continue?")
+                .setPositiveButton("Delete All", (dialog, which) -> {
+                    dbManager.deleteCategory(categoryId);
+                    loadData();
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
     }
 
     @Override
@@ -120,16 +172,13 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         if (drawerLayout.isDrawerOpen(GravityCompat.START)) {
             drawerLayout.closeDrawer(GravityCompat.START);
         } else if (currentCategoryId != null) {
-            // Navigate to parent category
-            List<Category> allCats = dbManager.getCategories(null, true);
-            for (Category cat : allCats) {
-                if (cat.id == currentCategoryId) {
-                    currentCategoryId = cat.parentCategory;
-                    loadData();
-                    return;
-                }
+            Category cat = dbManager.getCategory(currentCategoryId);
+            if (cat != null) {
+                currentCategoryId = cat.parentCategory;
+                loadData();
+            } else {
+                super.onBackPressed();
             }
-            super.onBackPressed();
         } else {
             super.onBackPressed();
         }

@@ -47,6 +47,7 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.ViewHolder> {
         if (item instanceof Category) {
             Category category = (Category) item;
             holder.name.setText(category.name);
+            holder.price.setVisibility(View.GONE);
             holder.stock.setVisibility(View.GONE);
             holder.saleButton.setVisibility(View.GONE);
             holder.customSaleButton.setVisibility(View.GONE);
@@ -114,10 +115,16 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.ViewHolder> {
         popup.setOnMenuItemClickListener(item -> {
             int id = item.getItemId();
             if (id == R.id.menu_edit) {
-                // TODO: Edit category
+                if (context instanceof MainActivity) {
+                    ((MainActivity) context).editCategory(category.id);
+                }
                 return true;
             } else if (id == R.id.menu_delete) {
-                // TODO: Delete category
+                if (context instanceof MainActivity) {
+                    ((MainActivity) context).deleteCategory(category.id);
+                }
+                return true;
+            } else if (id == R.id.menu_cancel) {
                 return true;
             }
             return false;
@@ -131,10 +138,16 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.ViewHolder> {
         popup.setOnMenuItemClickListener(menuItem -> {
             int id = menuItem.getItemId();
             if (id == R.id.menu_edit) {
-                // TODO: Edit item
+                if (context instanceof MainActivity) {
+                    ((MainActivity) context).editItem(item.id);
+                }
                 return true;
             } else if (id == R.id.menu_delete) {
-                // TODO: Delete item
+                if (context instanceof MainActivity) {
+                    ((MainActivity) context).deleteItem(item.id);
+                }
+                return true;
+            } else if (id == R.id.menu_cancel) {
                 return true;
             }
             return false;

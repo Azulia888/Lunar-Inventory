@@ -26,6 +26,15 @@
             android:name=".AddItemActivity"
             android:parentActivityName=".MainActivity" />
         <activity
+            android:name=".AddCategoryActivity"
+            android:parentActivityName=".MainActivity" />
+        <activity
+            android:name=".EditItemActivity"
+            android:parentActivityName=".MainActivity" />
+        <activity
+            android:name=".EditCategoryActivity"
+            android:parentActivityName=".MainActivity" />
+        <activity
             android:name=".CustomSaleActivity"
             android:parentActivityName=".MainActivity" />
     </application>
