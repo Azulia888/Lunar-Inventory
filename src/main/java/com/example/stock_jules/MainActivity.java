@@ -4,6 +4,8 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.Button;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.appcompat.app.ActionBarDrawerToggle;
@@ -26,7 +28,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     private MainAdapter adapter;
     private DatabaseManager dbManager;
     private Integer currentCategoryId = null;
+    private View categoryHeader;
     private TextView categoryTitle;
+    private Button backButton;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -47,12 +51,16 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         drawerLayout.addDrawerListener(toggle);
         toggle.syncState();
 
+        categoryHeader = findViewById(R.id.category_header);
         categoryTitle = findViewById(R.id.category_title);
+        backButton = findViewById(R.id.back_button);
         recyclerView = findViewById(R.id.recycler_view);
         recyclerView.setLayoutManager(new GridLayoutManager(this, 2));
 
         adapter = new MainAdapter(this, new ArrayList<>(), dbManager);
         recyclerView.setAdapter(adapter);
+
+        backButton.setOnClickListener(v -> goBackToParentCategory());
 
         loadData();
     }
@@ -64,12 +72,22 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         adapter.updateData(items);
 
         if (currentCategoryId == null) {
-            categoryTitle.setVisibility(View.GONE);
+            categoryHeader.setVisibility(View.GONE);
         } else {
-            categoryTitle.setVisibility(View.VISIBLE);
+            categoryHeader.setVisibility(View.VISIBLE);
             Category cat = dbManager.getCategory(currentCategoryId);
             if (cat != null) {
                 categoryTitle.setText(cat.name);
+            }
+        }
+    }
+
+    private void goBackToParentCategory() {
+        if (currentCategoryId != null) {
+            Category cat = dbManager.getCategory(currentCategoryId);
+            if (cat != null) {
+                currentCategoryId = cat.parentCategory;
+                loadData();
             }
         }
     }
@@ -78,7 +96,10 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     public boolean onNavigationItemSelected(MenuItem item) {
         int id = item.getItemId();
 
-        if (id == R.id.nav_add_item) {
+        if (id == R.id.nav_home) {
+            currentCategoryId = null;
+            loadData();
+        } else if (id == R.id.nav_add_item) {
             Intent intent = new Intent(this, AddItemActivity.class);
             startActivity(intent);
         } else if (id == R.id.nav_add_category) {
@@ -174,13 +195,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         if (drawerLayout.isDrawerOpen(GravityCompat.START)) {
             drawerLayout.closeDrawer(GravityCompat.START);
         } else if (currentCategoryId != null) {
-            Category cat = dbManager.getCategory(currentCategoryId);
-            if (cat != null) {
-                currentCategoryId = cat.parentCategory;
-                loadData();
-            } else {
-                super.onBackPressed();
-            }
+            goBackToParentCategory();
         } else {
             super.onBackPressed();
         }
