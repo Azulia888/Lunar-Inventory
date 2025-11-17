@@ -26,6 +26,7 @@ public class PdfExporter {
 
     private Context context;
     private DatabaseManager dbManager;
+    private PdfDocument document;
 
     public PdfExporter(Context context, DatabaseManager dbManager) {
         this.context = context;
@@ -33,7 +34,7 @@ public class PdfExporter {
     }
 
     public File exportToPdf(boolean isCurrentBatch, String batchName, String dateRange) {
-        PdfDocument document = new PdfDocument();
+        document = new PdfDocument();
         PdfDocument.Page currentPage = null;
         Canvas canvas = null;
         Paint paint = new Paint();
@@ -59,18 +60,22 @@ public class PdfExporter {
             yPos += LINE_HEIGHT * 2;
 
             // Draw category hierarchy
-            PageContext ctx = new PageContext(canvas, yPos, pageNumber);
-            ctx = drawCategoryHierarchy(paint, null, itemsByCategory, 0, ctx, document, currentPage);
+            PageContext ctx = new PageContext(canvas, yPos, pageNumber, currentPage);
+            ctx = drawCategoryHierarchy(paint, null, itemsByCategory, 0, ctx);
             currentPage = ctx.page;
             canvas = ctx.canvas;
             yPos = ctx.yPos;
 
             // Draw items without category
             if (itemsByCategory.containsKey(null)) {
-                ctx = drawItemsInCategory(paint, itemsByCategory.get(null), 0, ctx, document, currentPage);
+                ctx = drawItemsInCategory(paint, itemsByCategory.get(null), 0, ctx);
+                currentPage = ctx.page;
             }
 
-            document.finishPage(currentPage);
+            // Finish the last page
+            if (currentPage != null) {
+                document.finishPage(currentPage);
+            }
 
             // Create exports directory in internal storage
             File exportsDir = new File(context.getFilesDir(), "exports");
@@ -97,7 +102,9 @@ public class PdfExporter {
             e.printStackTrace();
             return null;
         } finally {
-            document.close();
+            if (document != null) {
+                document.close();
+            }
         }
     }
 
@@ -107,10 +114,11 @@ public class PdfExporter {
         int pageNumber;
         PdfDocument.Page page;
 
-        PageContext(Canvas canvas, int yPos, int pageNumber) {
+        PageContext(Canvas canvas, int yPos, int pageNumber, PdfDocument.Page page) {
             this.canvas = canvas;
             this.yPos = yPos;
             this.pageNumber = pageNumber;
+            this.page = page;
         }
     }
 
@@ -143,18 +151,17 @@ public class PdfExporter {
 
     private PageContext drawCategoryHierarchy(Paint paint, Integer parentCategoryId,
                                               Map<Integer, List<SaleGroup>> itemsByCategory,
-                                              int indent, PageContext ctx, PdfDocument document, PdfDocument.Page currentPage) {
+                                              int indent, PageContext ctx) {
         List<Category> categories = dbManager.getCategories(parentCategoryId, true);
 
         for (Category category : categories) {
             // Check if we need a new page
             if (ctx.yPos > PAGE_HEIGHT - MARGIN - LINE_HEIGHT * 3) {
-                document.finishPage(currentPage);
+                document.finishPage(ctx.page);
                 PdfDocument.PageInfo pageInfo = new PdfDocument.PageInfo.Builder(PAGE_WIDTH, PAGE_HEIGHT, ++ctx.pageNumber).create();
-                currentPage = document.startPage(pageInfo);
-                ctx.canvas = currentPage.getCanvas();
+                ctx.page = document.startPage(pageInfo);
+                ctx.canvas = ctx.page.getCanvas();
                 ctx.yPos = MARGIN;
-                ctx.page = currentPage;
             }
 
             // Draw category name
@@ -165,13 +172,11 @@ public class PdfExporter {
             paint.setFakeBoldText(false);
 
             // Draw subcategories recursively
-            ctx = drawCategoryHierarchy(paint, category.id, itemsByCategory, indent + 1, ctx, document, currentPage);
-            currentPage = ctx.page;
+            ctx = drawCategoryHierarchy(paint, category.id, itemsByCategory, indent + 1, ctx);
 
             // Draw items in this category
             if (itemsByCategory.containsKey(category.id)) {
-                ctx = drawItemsInCategory(paint, itemsByCategory.get(category.id), indent + 1, ctx, document, currentPage);
-                currentPage = ctx.page;
+                ctx = drawItemsInCategory(paint, itemsByCategory.get(category.id), indent + 1, ctx);
             }
 
             // Draw category total
@@ -192,18 +197,17 @@ public class PdfExporter {
     }
 
     private PageContext drawItemsInCategory(Paint paint, List<SaleGroup> sales,
-                                            int indent, PageContext ctx, PdfDocument document, PdfDocument.Page currentPage) {
+                                            int indent, PageContext ctx) {
         paint.setTextSize(11);
 
         for (SaleGroup sale : sales) {
             // Check if we need a new page
             if (ctx.yPos > PAGE_HEIGHT - MARGIN - LINE_HEIGHT * 2) {
-                document.finishPage(currentPage);
+                document.finishPage(ctx.page);
                 PdfDocument.PageInfo pageInfo = new PdfDocument.PageInfo.Builder(PAGE_WIDTH, PAGE_HEIGHT, ++ctx.pageNumber).create();
-                currentPage = document.startPage(pageInfo);
-                ctx.canvas = currentPage.getCanvas();
+                ctx.page = document.startPage(pageInfo);
+                ctx.canvas = ctx.page.getCanvas();
                 ctx.yPos = MARGIN;
-                ctx.page = currentPage;
             }
 
             // Item name with price indicator
