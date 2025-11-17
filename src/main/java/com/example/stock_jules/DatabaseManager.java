@@ -383,4 +383,131 @@ public class DatabaseManager {
         values.put("name", "Batch " + nextBatchId);
         db.insert("sale_batch", null, values);
     }
+
+    public List<SaleGroup> getSalesGroupedForExport(boolean currentBatchOnly) {
+        List<SaleGroup> groups = new ArrayList<>();
+        String query;
+
+        if (currentBatchOnly) {
+            query = "SELECT s.id_item, i.name, i.id_category, s.sold_price, COUNT(*) as quantity " +
+                    "FROM sale s " +
+                    "INNER JOIN item i ON s.id_item = i.id_item " +
+                    "WHERE s.id_export = (SELECT id_export FROM sale_batch ORDER BY id_export DESC LIMIT 1) " +
+                    "GROUP BY s.id_item, s.sold_price " +
+                    "ORDER BY i.name, s.sold_price";
+        } else {
+            query = "SELECT s.id_item, i.name, i.id_category, s.sold_price, COUNT(*) as quantity " +
+                    "FROM sale s " +
+                    "INNER JOIN item i ON s.id_item = i.id_item " +
+                    "GROUP BY s.id_item, s.sold_price " +
+                    "ORDER BY i.name, s.sold_price";
+        }
+
+        Cursor cursor = db.rawQuery(query, null);
+
+        while (cursor.moveToNext()) {
+            groups.add(new SaleGroup(
+                    cursor.getInt(0),
+                    cursor.getString(1),
+                    cursor.isNull(2) ? null : cursor.getInt(2),
+                    cursor.getDouble(3),
+                    cursor.getInt(4)
+            ));
+        }
+        cursor.close();
+        return groups;
+    }
+
+    public String getCurrentBatchName() {
+        Cursor cursor = db.rawQuery("SELECT name FROM sale_batch ORDER BY id_export DESC LIMIT 1", null);
+        String name = "Batch 1";
+        if (cursor.moveToFirst()) {
+            name = cursor.getString(0);
+        }
+        cursor.close();
+        return name;
+    }
+
+    public int getCurrentBatchId() {
+        Cursor cursor = db.rawQuery("SELECT id_export FROM sale_batch ORDER BY id_export DESC LIMIT 1", null);
+        int id = 1;
+        if (cursor.moveToFirst()) {
+            id = cursor.getInt(0);
+        }
+        cursor.close();
+        return id;
+    }
+
+    public String getExportDateRange(boolean currentBatchOnly) {
+        String query;
+        if (currentBatchOnly) {
+            query = "SELECT MIN(sale_time), MAX(sale_time) FROM sale " +
+                    "WHERE id_export = (SELECT id_export FROM sale_batch ORDER BY id_export DESC LIMIT 1)";
+        } else {
+            query = "SELECT MIN(sale_time), MAX(sale_time) FROM sale";
+        }
+
+        Cursor cursor = db.rawQuery(query, null);
+        String dateRange = "";
+        if (cursor.moveToFirst() && !cursor.isNull(0)) {
+            String startDate = cursor.getString(0);
+            String endDate = cursor.getString(1);
+            dateRange = formatDateRange(startDate, endDate);
+        }
+        cursor.close();
+        return dateRange;
+    }
+
+    private String formatDateRange(String start, String end) {
+        try {
+            // Assuming format: YYYY-MM-DD HH:MM:SS
+            String startDate = start.substring(0, 10);
+            String endDate = end.substring(0, 10);
+
+            if (startDate.equals(endDate)) {
+                return startDate;
+            } else {
+                return startDate + " to " + endDate;
+            }
+        } catch (Exception e) {
+            return start + " to " + end;
+        }
+    }
+
+    public void updateBatchExportTime(int batchId) {
+        db.execSQL("UPDATE sale_batch SET export_time = datetime('now') WHERE id_export = ?",
+                new Object[]{batchId});
+    }
+
+    public long saveExportRecord(String filename, String filepath, Integer batchId, String format, boolean isFullExport) {
+        ContentValues values = new ContentValues();
+        values.put("filename", filename);
+        values.put("filepath", filepath);
+        if (batchId != null) values.put("id_batch", batchId);
+        values.put("format", format);
+        values.put("is_full_export", isFullExport ? 1 : 0);
+        return db.insert("export_record", null, values);
+    }
+
+    public List<ExportRecord> getAllExportRecords() {
+        List<ExportRecord> records = new ArrayList<>();
+        Cursor cursor = db.query("export_record", null, null, null, null, null, "export_time DESC");
+
+        while (cursor.moveToNext()) {
+            records.add(new ExportRecord(
+                    cursor.getInt(cursor.getColumnIndexOrThrow("id_record")),
+                    cursor.getString(cursor.getColumnIndexOrThrow("filename")),
+                    cursor.getString(cursor.getColumnIndexOrThrow("filepath")),
+                    cursor.getString(cursor.getColumnIndexOrThrow("export_time")),
+                    cursor.isNull(cursor.getColumnIndexOrThrow("id_batch")) ? -1 :
+                            cursor.getInt(cursor.getColumnIndexOrThrow("id_batch")),
+                    cursor.getString(cursor.getColumnIndexOrThrow("format")),
+                    cursor.getInt(cursor.getColumnIndexOrThrow("is_full_export")) == 1
+            ));
+        }
+        cursor.close();
+        return records;
+    }
+
+
 }

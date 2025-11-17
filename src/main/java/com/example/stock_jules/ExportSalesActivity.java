@@ -1,6 +1,7 @@
 package com.example.stock_jules;
 
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.view.MenuItem;
 import android.widget.Button;
@@ -13,10 +14,13 @@ import android.widget.Toast;
 import androidx.appcompat.app.ActionBarDrawerToggle;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
+import androidx.core.content.FileProvider;
 import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 
 import com.google.android.material.navigation.NavigationView;
+
+import java.io.File;
 
 public class ExportSalesActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener {
     private DrawerLayout drawerLayout;
@@ -101,19 +105,59 @@ public class ExportSalesActivity extends AppCompatActivity implements Navigation
         String format = csvRadio.isChecked() ? "CSV" :
                 excelRadio.isChecked() ? "XLSX" : "PDF";
 
-        // TODO: Implement actual export functionality
-        Toast.makeText(this,
-                "Export functionality not yet implemented\n" +
-                        "Scope: " + (isCurrentBatch ? "Current Batch" : "Full Export") + "\n" +
-                        "Format: " + format + "\n" +
-                        "End Batch: " + (endBatch ? "Yes" : "No"),
-                Toast.LENGTH_LONG).show();
+        if (!pdfRadio.isChecked()) {
+            Toast.makeText(this, "CSV and Excel export not yet implemented", Toast.LENGTH_SHORT).show();
+            return;
+        }
 
-        // If end batch is checked and exporting current batch, create new batch
+        // Get batch information
+        String batchName = isCurrentBatch ? dbManager.getCurrentBatchName() : "All Batches";
+        String dateRange = dbManager.getExportDateRange(isCurrentBatch);
+        int batchId = isCurrentBatch ? dbManager.getCurrentBatchId() : -1;
+
+        // Generate PDF
+        PdfExporter exporter = new PdfExporter(this, dbManager);
+        File pdfFile = exporter.exportToPdf(isCurrentBatch, batchName, dateRange);
+
+        if (pdfFile == null) {
+            Toast.makeText(this, "Failed to generate PDF", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // Save export record
+        dbManager.saveExportRecord(pdfFile.getName(), pdfFile.getAbsolutePath(),
+                isCurrentBatch ? batchId : null, format, !isCurrentBatch);
+
+        // Update batch export time
+        if (isCurrentBatch) {
+            dbManager.updateBatchExportTime(batchId);
+        }
+
+        // Create new batch if requested
         if (isCurrentBatch && endBatch) {
             dbManager.createNewBatch();
             Toast.makeText(this, "New batch started", Toast.LENGTH_SHORT).show();
             updateExportInfo();
+        }
+
+        // Share the PDF
+        shareFile(pdfFile);
+    }
+
+    private void shareFile(File file) {
+        Uri fileUri = FileProvider.getUriForFile(this,
+                "com.example.stock_jules.fileprovider", file);
+
+        Intent intent = new Intent(Intent.ACTION_SEND);
+        intent.setType("application/pdf");
+        intent.putExtra(Intent.EXTRA_STREAM, fileUri);
+        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+
+        try {
+            startActivity(Intent.createChooser(intent, "Share Export"));
+            Toast.makeText(this, "Export created successfully", Toast.LENGTH_SHORT).show();
+        } catch (Exception e) {
+            Toast.makeText(this, "Failed to share file", Toast.LENGTH_SHORT).show();
         }
     }
 
