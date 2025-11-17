@@ -1,11 +1,11 @@
-package com.example.stock_jules;
+package com.example.lunar_inventory;
 
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
-import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
@@ -22,7 +22,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class AddItemActivity extends AppCompatActivity {
+public class EditItemActivity extends AppCompatActivity {
     private static final int PICK_IMAGE = 1;
 
     private EditText nameInput, priceInput, stockInput;
@@ -33,31 +33,65 @@ public class AddItemActivity extends AppCompatActivity {
 
     private DatabaseManager dbManager;
     private String selectedImagePath = null;
+    private int itemId;
+    private Item currentItem;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_add_item);
+        setContentView(R.layout.activity_edit_item);
 
         dbManager = new DatabaseManager(this);
 
-        nameInput = findViewById(R.id.name_input);
-        priceInput = findViewById(R.id.price_input);
-        stockInput = findViewById(R.id.stock_input);
-        categorySpinner = findViewById(R.id.category_spinner);
-        useCategoryPriceCheckBox = findViewById(R.id.use_category_price);
-        imagePreview = findViewById(R.id.image_preview);
-        selectImageButton = findViewById(R.id.select_image_button);
-        saveButton = findViewById(R.id.save_button);
+        itemId = getIntent().getIntExtra("item_id", -1);
+        if (itemId == -1) {
+            Toast.makeText(this, "Invalid item", Toast.LENGTH_SHORT).show();
+            finish();
+            return;
+        }
 
-        // Load categories
+        currentItem = dbManager.getItem(itemId);
+        if (currentItem == null) {
+            Toast.makeText(this, "Item not found", Toast.LENGTH_SHORT).show();
+            finish();
+            return;
+        }
+
+        nameInput = findViewById(R.id.edit_name_input);
+        priceInput = findViewById(R.id.edit_price_input);
+        stockInput = findViewById(R.id.edit_stock_input);
+        categorySpinner = findViewById(R.id.edit_category_spinner);
+        useCategoryPriceCheckBox = findViewById(R.id.edit_use_category_price);
+        imagePreview = findViewById(R.id.edit_image_preview);
+        selectImageButton = findViewById(R.id.edit_select_image_button);
+        saveButton = findViewById(R.id.edit_save_button);
+
+        loadItemData();
         loadCategories();
 
         useCategoryPriceCheckBox.setOnCheckedChangeListener((buttonView, isChecked) -> {
             priceInput.setEnabled(!isChecked);
-            if (isChecked) {
-                priceInput.setText("");
+            if (isChecked && categorySpinner.getSelectedItemPosition() > 0) {
+                List<Category> categories = getAllCategoriesRecursive();
+                int categoryId = categories.get(categorySpinner.getSelectedItemPosition() - 1).id;
+                Double catPrice = dbManager.getCategoryPrice(categoryId);
+                priceInput.setText(String.valueOf(catPrice));
             }
+        });
+
+        categorySpinner.setOnItemSelectedListener(new android.widget.AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(android.widget.AdapterView<?> parent, android.view.View view, int position, long id) {
+                if (useCategoryPriceCheckBox.isChecked() && position > 0) {
+                    List<Category> categories = getAllCategoriesRecursive();
+                    int categoryId = categories.get(position - 1).id;
+                    Double catPrice = dbManager.getCategoryPrice(categoryId);
+                    priceInput.setText(String.valueOf(catPrice));
+                }
+            }
+
+            @Override
+            public void onNothingSelected(android.widget.AdapterView<?> parent) {}
         });
 
         selectImageButton.setOnClickListener(v -> {
@@ -68,19 +102,56 @@ public class AddItemActivity extends AppCompatActivity {
         saveButton.setOnClickListener(v -> saveItem());
     }
 
+    private void loadItemData() {
+        nameInput.setText(currentItem.name);
+        priceInput.setText(String.valueOf(currentItem.basePrice));
+
+        if (currentItem.currentStock != -1) {
+            stockInput.setText(String.valueOf(currentItem.currentStock));
+        }
+
+        useCategoryPriceCheckBox.setChecked(currentItem.usesCategoryPrice);
+        priceInput.setEnabled(!currentItem.usesCategoryPrice);
+
+        if (currentItem.picture != null && !currentItem.picture.isEmpty()) {
+            Bitmap bitmap = BitmapFactory.decodeFile(currentItem.picture);
+            imagePreview.setImageBitmap(bitmap);
+            selectedImagePath = currentItem.picture;
+        }
+    }
+
     private void loadCategories() {
-        List<Category> categories = dbManager.getCategories(null, false);
+        List<Category> categories = getAllCategoriesRecursive();
         List<String> categoryNames = new ArrayList<>();
         categoryNames.add("None");
 
-        for (Category cat : categories) {
-            categoryNames.add(cat.name);
+        int selectedPosition = 0;
+        for (int i = 0; i < categories.size(); i++) {
+            categoryNames.add(categories.get(i).name);
+            if (currentItem.categoryId != null && categories.get(i).id == currentItem.categoryId) {
+                selectedPosition = i + 1;
+            }
         }
 
         ArrayAdapter<String> adapter = new ArrayAdapter<>(this,
                 android.R.layout.simple_spinner_item, categoryNames);
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         categorySpinner.setAdapter(adapter);
+        categorySpinner.setSelection(selectedPosition);
+    }
+
+    private List<Category> getAllCategoriesRecursive() {
+        List<Category> allCategories = new ArrayList<>();
+        addCategoriesRecursive(null, allCategories, 0);
+        return allCategories;
+    }
+
+    private void addCategoriesRecursive(Integer parentId, List<Category> result, int depth) {
+        List<Category> cats = dbManager.getCategories(parentId, false);
+        for (Category cat : cats) {
+            result.add(cat);
+            addCategoriesRecursive(cat.id, result, depth + 1);
+        }
     }
 
     @Override
@@ -145,21 +216,23 @@ public class AddItemActivity extends AppCompatActivity {
                 Toast.makeText(this, "Invalid stock", Toast.LENGTH_SHORT).show();
                 return;
             }
+        } else {
+            stock = -1;
         }
 
         Integer categoryId = null;
         if (categorySpinner.getSelectedItemPosition() > 0) {
-            List<Category> categories = dbManager.getCategories(null, false);
+            List<Category> categories = getAllCategoriesRecursive();
             categoryId = categories.get(categorySpinner.getSelectedItemPosition() - 1).id;
         }
 
-        long result = dbManager.addItem(name, selectedImagePath, price, stock, categoryId, useCategoryPrice);
+        boolean result = dbManager.updateItem(itemId, name, selectedImagePath, price, stock, categoryId, useCategoryPrice);
 
-        if (result != -1) {
-            Toast.makeText(this, "Item added successfully", Toast.LENGTH_SHORT).show();
+        if (result) {
+            Toast.makeText(this, "Item updated successfully", Toast.LENGTH_SHORT).show();
             finish();
         } else {
-            Toast.makeText(this, "Failed to add item", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Failed to update item", Toast.LENGTH_SHORT).show();
         }
     }
 

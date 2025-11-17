@@ -1,4 +1,4 @@
-package com.example.stock_jules;
+package com.example.lunar_inventory;
 
 class Sale {
     public int id;

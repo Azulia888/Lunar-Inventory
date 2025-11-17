@@ -1,11 +1,11 @@
-package com.example.stock_jules;
+package com.example.lunar_inventory;
 
 import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 
 public class DatabaseHelper extends SQLiteOpenHelper {
-    private static final String DATABASE_NAME = "stock_jules.db";
+    private static final String DATABASE_NAME = "lunar_inventory.db";
     private static final int DATABASE_VERSION = 2;
 
     public DatabaseHelper(Context context) {

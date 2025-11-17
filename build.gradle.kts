@@ -3,11 +3,11 @@ plugins {
 }
 
 android {
-    namespace = "com.example.stock_jules"
+    namespace = "com.example.lunar_inventory"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.example.stock_jules"
+        applicationId = "com.example.lunar_inventory"
         minSdk = 24
         targetSdk = 34
         versionCode = 1

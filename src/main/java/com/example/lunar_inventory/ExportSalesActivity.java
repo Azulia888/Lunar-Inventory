@@ -1,4 +1,4 @@
-package com.example.stock_jules;
+package com.example.lunar_inventory;
 
 import android.content.Intent;
 import android.net.Uri;
@@ -156,7 +156,7 @@ public class ExportSalesActivity extends AppCompatActivity implements Navigation
     private void shareFile(File file) {
         try {
             Uri fileUri = FileProvider.getUriForFile(this,
-                    "com.example.stock_jules.fileprovider", file);
+                    "com.example.lunar_inventory.fileprovider", file);
 
             Log.d(TAG, "File URI: " + fileUri.toString());
 

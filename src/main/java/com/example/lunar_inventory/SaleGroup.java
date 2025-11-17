@@ -1,4 +1,4 @@
-package com.example.stock_jules;
+package com.example.lunar_inventory;
 
 class SaleGroup {
     public int itemId;

@@ -1,4 +1,4 @@
-package com.example.stock_jules;
+package com.example.lunar_inventory;
 
 import android.os.Bundle;
 import android.widget.Button;
