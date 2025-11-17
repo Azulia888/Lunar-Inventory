@@ -3,6 +3,7 @@ package com.example.stock_jules;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.MenuItem;
 import android.widget.Button;
 import android.widget.CheckBox;
@@ -23,6 +24,8 @@ import com.google.android.material.navigation.NavigationView;
 import java.io.File;
 
 public class ExportSalesActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener {
+    private static final String TAG = "ExportSalesActivity";
+
     private DrawerLayout drawerLayout;
     private RadioGroup scopeGroup, formatGroup;
     private RadioButton currentBatchRadio, fullExportRadio;
@@ -115,14 +118,20 @@ public class ExportSalesActivity extends AppCompatActivity implements Navigation
         String dateRange = dbManager.getExportDateRange(isCurrentBatch);
         int batchId = isCurrentBatch ? dbManager.getCurrentBatchId() : -1;
 
+        Log.d(TAG, "Starting PDF export - Batch: " + batchName + ", Date Range: " + dateRange);
+
         // Generate PDF
         PdfExporter exporter = new PdfExporter(this, dbManager);
         File pdfFile = exporter.exportToPdf(isCurrentBatch, batchName, dateRange);
 
-        if (pdfFile == null) {
+        if (pdfFile == null || !pdfFile.exists()) {
+            Log.e(TAG, "Failed to generate PDF or file doesn't exist");
             Toast.makeText(this, "Failed to generate PDF", Toast.LENGTH_SHORT).show();
             return;
         }
+
+        Log.d(TAG, "PDF generated successfully at: " + pdfFile.getAbsolutePath());
+        Log.d(TAG, "File exists: " + pdfFile.exists() + ", Size: " + pdfFile.length() + " bytes");
 
         // Save export record
         dbManager.saveExportRecord(pdfFile.getName(), pdfFile.getAbsolutePath(),
@@ -145,19 +154,32 @@ public class ExportSalesActivity extends AppCompatActivity implements Navigation
     }
 
     private void shareFile(File file) {
-        Uri fileUri = FileProvider.getUriForFile(this,
-                "com.example.stock_jules.fileprovider", file);
-
-        Intent intent = new Intent(Intent.ACTION_SEND);
-        intent.setType("application/pdf");
-        intent.putExtra(Intent.EXTRA_STREAM, fileUri);
-        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-
         try {
-            startActivity(Intent.createChooser(intent, "Share Export"));
-            Toast.makeText(this, "Export created successfully", Toast.LENGTH_SHORT).show();
+            Uri fileUri = FileProvider.getUriForFile(this,
+                    "com.example.stock_jules.fileprovider", file);
+
+            Log.d(TAG, "File URI: " + fileUri.toString());
+
+            Intent intent = new Intent(Intent.ACTION_SEND);
+            intent.setType("application/pdf");
+            intent.putExtra(Intent.EXTRA_STREAM, fileUri);
+            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+
+            Intent chooser = Intent.createChooser(intent, "Share Export");
+            if (chooser.resolveActivity(getPackageManager()) != null) {
+                startActivity(chooser);
+                Toast.makeText(this, "Export created successfully", Toast.LENGTH_SHORT).show();
+            } else {
+                Log.e(TAG, "No app available to handle share intent");
+                Toast.makeText(this, "No app available to share PDF", Toast.LENGTH_SHORT).show();
+            }
+        } catch (IllegalArgumentException e) {
+            Log.e(TAG, "File path not supported by FileProvider", e);
+            Toast.makeText(this, "Error: File path not accessible", Toast.LENGTH_LONG).show();
         } catch (Exception e) {
-            Toast.makeText(this, "Failed to share file", Toast.LENGTH_SHORT).show();
+            Log.e(TAG, "Failed to share file", e);
+            Toast.makeText(this, "Failed to share file: " + e.getMessage(), Toast.LENGTH_LONG).show();
         }
     }
 

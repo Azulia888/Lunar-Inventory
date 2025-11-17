@@ -4,6 +4,7 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.pdf.PdfDocument;
+import android.util.Log;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -17,6 +18,7 @@ import java.util.Locale;
 import java.util.Map;
 
 public class PdfExporter {
+    private static final String TAG = "PdfExporter";
     private static final int PAGE_WIDTH = 595; // A4 width in points
     private static final int PAGE_HEIGHT = 842; // A4 height in points
     private static final int MARGIN = 40;
@@ -70,13 +72,28 @@ public class PdfExporter {
 
             document.finishPage(currentPage);
 
-            // Save to file
-            File file = new File(context.getFilesDir(), generateFilename());
+            // Create exports directory in internal storage
+            File exportsDir = new File(context.getFilesDir(), "exports");
+            if (!exportsDir.exists()) {
+                boolean created = exportsDir.mkdirs();
+                Log.d(TAG, "Exports directory created: " + created);
+            }
+
+            // Save to file in exports directory
+            File file = new File(exportsDir, generateFilename());
+            Log.d(TAG, "Attempting to save PDF to: " + file.getAbsolutePath());
+
             try (FileOutputStream fos = new FileOutputStream(file)) {
                 document.writeTo(fos);
+                fos.flush();
+                Log.d(TAG, "PDF saved successfully");
                 return file;
+            } catch (IOException e) {
+                Log.e(TAG, "Error saving PDF", e);
+                return null;
             }
         } catch (Exception e) {
+            Log.e(TAG, "Error generating PDF", e);
             e.printStackTrace();
             return null;
         } finally {
