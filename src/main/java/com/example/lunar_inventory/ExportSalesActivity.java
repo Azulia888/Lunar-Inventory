@@ -7,6 +7,7 @@ import android.util.Log;
 import android.view.MenuItem;
 import android.widget.Button;
 import android.widget.CheckBox;
+import android.widget.EditText;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.TextView;
@@ -27,6 +28,7 @@ public class ExportSalesActivity extends AppCompatActivity implements Navigation
     private static final String TAG = "ExportSalesActivity";
 
     private DrawerLayout drawerLayout;
+    private EditText exportNameInput;
     private RadioGroup scopeGroup, formatGroup;
     private RadioButton currentBatchRadio, fullExportRadio;
     private RadioButton csvRadio, excelRadio, pdfRadio;
@@ -54,6 +56,7 @@ public class ExportSalesActivity extends AppCompatActivity implements Navigation
         drawerLayout.addDrawerListener(toggle);
         toggle.syncState();
 
+        exportNameInput = findViewById(R.id.export_name_input);
         scopeGroup = findViewById(R.id.export_scope_group);
         formatGroup = findViewById(R.id.export_format_group);
         currentBatchRadio = findViewById(R.id.radio_current_batch);
@@ -108,26 +111,28 @@ public class ExportSalesActivity extends AppCompatActivity implements Navigation
         String format = csvRadio.isChecked() ? "CSV" :
                 excelRadio.isChecked() ? "XLSX" : "PDF";
 
-        if (excelRadio.isChecked()) {
-            Toast.makeText(this, "Excel export not yet implemented", Toast.LENGTH_SHORT).show();
-            return;
+        // Get export name
+        String customName = exportNameInput.getText().toString().trim();
+        String exportName;
+        if (!customName.isEmpty()) {
+            exportName = customName;
+        } else {
+            exportName = isCurrentBatch ? dbManager.getCurrentBatchName() : "All Batches";
         }
 
-        // Get batch information
-        String batchName = isCurrentBatch ? dbManager.getCurrentBatchName() : "All Batches";
         String dateRange = dbManager.getExportDateRange(isCurrentBatch);
         int batchId = isCurrentBatch ? dbManager.getCurrentBatchId() : -1;
 
-        Log.d(TAG, "Starting export - Format: " + format + ", Batch: " + batchName + ", Date Range: " + dateRange);
+        Log.d(TAG, "Starting export - Format: " + format + ", Name: " + exportName + ", Date Range: " + dateRange);
 
         // Generate export file
         File exportFile;
         if (csvRadio.isChecked()) {
             CsvExporter csvExporter = new CsvExporter(this, dbManager);
-            exportFile = csvExporter.exportToCsv(isCurrentBatch, batchName, dateRange);
+            exportFile = csvExporter.exportToCsv(isCurrentBatch, exportName, dateRange);
         } else {
             PdfExporter pdfExporter = new PdfExporter(this, dbManager);
-            exportFile = pdfExporter.exportToPdf(isCurrentBatch, batchName, dateRange);
+            exportFile = pdfExporter.exportToPdf(isCurrentBatch, exportName, dateRange);
         }
 
         if (exportFile == null || !exportFile.exists()) {
@@ -166,7 +171,12 @@ public class ExportSalesActivity extends AppCompatActivity implements Navigation
 
             Log.d(TAG, "File URI: " + fileUri.toString());
 
-            String mimeType = file.getName().endsWith(".pdf") ? "application/pdf" : "text/csv";
+            String mimeType;
+            if (file.getName().endsWith(".pdf")) {
+                mimeType = "application/pdf";
+            } else {
+                mimeType = "text/csv";
+            }
 
             Intent intent = new Intent(Intent.ACTION_SEND);
             intent.setType(mimeType);
