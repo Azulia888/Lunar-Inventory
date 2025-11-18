@@ -348,6 +348,20 @@ public class DatabaseManager {
         return rows > 0;
     }
 
+    public boolean resetAllSales() {
+        try {
+            // Delete all sales
+            int salesDeleted = db.delete("sale", null, null);
+
+            // Reset all item counters
+            db.execSQL("UPDATE item SET total_sold = 0, current_stock = CASE WHEN current_stock = -1 THEN -1 ELSE current_stock + total_sold END");
+
+            return salesDeleted > 0;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
     public int getCurrentBatchSaleCount() {
         Cursor cursor = db.rawQuery(
                 "SELECT COUNT(*) FROM sale WHERE id_export = " +

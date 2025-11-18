@@ -6,6 +6,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.appcompat.app.ActionBarDrawerToggle;
 import androidx.appcompat.app.AlertDialog;
@@ -112,10 +113,29 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             startActivity(intent);
         } else if (id == R.id.nav_export_history) {
             // TODO: Implement
+        } else if (id == R.id.nav_reset_sales) {
+            showResetSalesDialog();
         }
 
         drawerLayout.closeDrawer(GravityCompat.START);
         return true;
+    }
+
+    private void showResetSalesDialog() {
+        new AlertDialog.Builder(this)
+                .setTitle("Reset All Sales")
+                .setMessage("Are you sure you want to delete all sales? This will reset all sales records and item counters. This action cannot be undone.")
+                .setPositiveButton("Yes, Reset", (dialog, which) -> {
+                    boolean success = dbManager.resetAllSales();
+                    if (success) {
+                        Toast.makeText(this, "All sales have been reset", Toast.LENGTH_SHORT).show();
+                        loadData();
+                    } else {
+                        Toast.makeText(this, "Failed to reset sales", Toast.LENGTH_SHORT).show();
+                    }
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
     }
 
     public void editItem(int itemId) {
