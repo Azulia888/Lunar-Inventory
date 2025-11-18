@@ -108,8 +108,8 @@ public class ExportSalesActivity extends AppCompatActivity implements Navigation
         String format = csvRadio.isChecked() ? "CSV" :
                 excelRadio.isChecked() ? "XLSX" : "PDF";
 
-        if (!pdfRadio.isChecked()) {
-            Toast.makeText(this, "CSV and Excel export not yet implemented", Toast.LENGTH_SHORT).show();
+        if (excelRadio.isChecked()) {
+            Toast.makeText(this, "Excel export not yet implemented", Toast.LENGTH_SHORT).show();
             return;
         }
 
@@ -118,23 +118,29 @@ public class ExportSalesActivity extends AppCompatActivity implements Navigation
         String dateRange = dbManager.getExportDateRange(isCurrentBatch);
         int batchId = isCurrentBatch ? dbManager.getCurrentBatchId() : -1;
 
-        Log.d(TAG, "Starting PDF export - Batch: " + batchName + ", Date Range: " + dateRange);
+        Log.d(TAG, "Starting export - Format: " + format + ", Batch: " + batchName + ", Date Range: " + dateRange);
 
-        // Generate PDF
-        PdfExporter exporter = new PdfExporter(this, dbManager);
-        File pdfFile = exporter.exportToPdf(isCurrentBatch, batchName, dateRange);
+        // Generate export file
+        File exportFile;
+        if (csvRadio.isChecked()) {
+            CsvExporter csvExporter = new CsvExporter(this, dbManager);
+            exportFile = csvExporter.exportToCsv(isCurrentBatch, batchName, dateRange);
+        } else {
+            PdfExporter pdfExporter = new PdfExporter(this, dbManager);
+            exportFile = pdfExporter.exportToPdf(isCurrentBatch, batchName, dateRange);
+        }
 
-        if (pdfFile == null || !pdfFile.exists()) {
-            Log.e(TAG, "Failed to generate PDF or file doesn't exist");
-            Toast.makeText(this, "Failed to generate PDF", Toast.LENGTH_SHORT).show();
+        if (exportFile == null || !exportFile.exists()) {
+            Log.e(TAG, "Failed to generate export or file doesn't exist");
+            Toast.makeText(this, "Failed to generate export", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        Log.d(TAG, "PDF generated successfully at: " + pdfFile.getAbsolutePath());
-        Log.d(TAG, "File exists: " + pdfFile.exists() + ", Size: " + pdfFile.length() + " bytes");
+        Log.d(TAG, "Export generated successfully at: " + exportFile.getAbsolutePath());
+        Log.d(TAG, "File exists: " + exportFile.exists() + ", Size: " + exportFile.length() + " bytes");
 
         // Save export record
-        dbManager.saveExportRecord(pdfFile.getName(), pdfFile.getAbsolutePath(),
+        dbManager.saveExportRecord(exportFile.getName(), exportFile.getAbsolutePath(),
                 isCurrentBatch ? batchId : null, format, !isCurrentBatch);
 
         // Update batch export time
@@ -149,8 +155,8 @@ public class ExportSalesActivity extends AppCompatActivity implements Navigation
             updateExportInfo();
         }
 
-        // Share the PDF
-        shareFile(pdfFile);
+        // Share the file
+        shareFile(exportFile);
     }
 
     private void shareFile(File file) {
@@ -160,8 +166,10 @@ public class ExportSalesActivity extends AppCompatActivity implements Navigation
 
             Log.d(TAG, "File URI: " + fileUri.toString());
 
+            String mimeType = file.getName().endsWith(".pdf") ? "application/pdf" : "text/csv";
+
             Intent intent = new Intent(Intent.ACTION_SEND);
-            intent.setType("application/pdf");
+            intent.setType(mimeType);
             intent.putExtra(Intent.EXTRA_STREAM, fileUri);
             intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
@@ -172,7 +180,7 @@ public class ExportSalesActivity extends AppCompatActivity implements Navigation
                 Toast.makeText(this, "Export created successfully", Toast.LENGTH_SHORT).show();
             } else {
                 Log.e(TAG, "No app available to handle share intent");
-                Toast.makeText(this, "No app available to share PDF", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "No app available to share file", Toast.LENGTH_SHORT).show();
             }
         } catch (IllegalArgumentException e) {
             Log.e(TAG, "File path not supported by FileProvider", e);
