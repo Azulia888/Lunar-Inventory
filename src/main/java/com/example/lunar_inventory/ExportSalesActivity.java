@@ -31,7 +31,7 @@ public class ExportSalesActivity extends AppCompatActivity implements Navigation
     private EditText exportNameInput;
     private RadioGroup scopeGroup, formatGroup;
     private RadioButton currentBatchRadio, fullExportRadio;
-    private RadioButton csvRadio, excelRadio, pdfRadio;
+    private RadioButton csvRadio, pdfRadio;
     private CheckBox endBatchCheckbox;
     private TextView exportInfo;
     private Button exportButton;
@@ -62,7 +62,6 @@ public class ExportSalesActivity extends AppCompatActivity implements Navigation
         currentBatchRadio = findViewById(R.id.radio_current_batch);
         fullExportRadio = findViewById(R.id.radio_full_export);
         csvRadio = findViewById(R.id.radio_csv);
-        excelRadio = findViewById(R.id.radio_excel);
         pdfRadio = findViewById(R.id.radio_pdf);
         endBatchCheckbox = findViewById(R.id.end_batch_checkbox);
         exportInfo = findViewById(R.id.export_info);
@@ -108,8 +107,7 @@ public class ExportSalesActivity extends AppCompatActivity implements Navigation
     private void performExport() {
         boolean isCurrentBatch = currentBatchRadio.isChecked();
         boolean endBatch = endBatchCheckbox.isChecked();
-        String format = csvRadio.isChecked() ? "CSV" :
-                excelRadio.isChecked() ? "XLSX" : "PDF";
+        String format = csvRadio.isChecked() ? "CSV" : "PDF";
 
         // Get export name
         String customName = exportNameInput.getText().toString().trim();

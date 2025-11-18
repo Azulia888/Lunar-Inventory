@@ -107,23 +107,19 @@
                     android:layout_marginTop="8dp">
 
                     <RadioButton
-                        android:id="@+id/radio_csv"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="CSV"
-                        android:checked="true" />
-
-                    <RadioButton
-                        android:id="@+id/radio_excel"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="Excel (XLSX)" />
-
-                    <RadioButton
                         android:id="@+id/radio_pdf"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="PDF" />
+                        android:text="PDF"
+                        android:checked="true" />
+
+                    <RadioButton
+                        android:id="@+id/radio_csv"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="CSV (for Excel import)"
+                         />
+
 
                 </RadioGroup>
 
