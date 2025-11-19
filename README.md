@@ -83,6 +83,10 @@ Next option is showing the last sales done. You can press the bin icon if you wa
 
 idk if you want a feature or like complain or idk, feel free to reach out at azulia888@protonmail.com
 
+## Credit
+
+The app icon comes from Touhou Kouryuudou ~ Unconnected Marketeers (stage 6 background), by ZUN and Team Shanghai Alice. All of that image's right belong to them. \
+By the way, the clean background was obtained thanks to Dai Karasu's youtube chanel.
 
 
 
