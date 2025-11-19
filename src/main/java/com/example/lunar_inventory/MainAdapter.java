@@ -7,6 +7,8 @@ import android.graphics.BitmapFactory;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.Animation;
+import android.view.animation.ScaleAnimation;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.PopupMenu;
@@ -92,10 +94,18 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.ViewHolder> {
             }
 
             holder.saleButton.setOnClickListener(v -> {
+                // Animate button press
+                animateButtonPress(v);
+
+                // Record sale
                 dbManager.addSale(itemObj.id, itemObj.basePrice);
-                if (context instanceof MainActivity) {
-                    ((MainActivity) context).onResume();
-                }
+
+                // Refresh UI after animation
+                v.postDelayed(() -> {
+                    if (context instanceof MainActivity) {
+                        ((MainActivity) context).onResume();
+                    }
+                }, 200);
             });
 
             holder.customSaleButton.setOnClickListener(v -> {
@@ -107,6 +117,40 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.ViewHolder> {
 
             holder.menuButton.setOnClickListener(v -> showItemMenu(v, itemObj));
         }
+    }
+
+    private void animateButtonPress(View view) {
+        ScaleAnimation scaleDown = new ScaleAnimation(
+                1.0f, 0.9f,  // X scale: from 100% to 90%
+                1.0f, 0.9f,  // Y scale: from 100% to 90%
+                Animation.RELATIVE_TO_SELF, 0.5f,  // Pivot point X
+                Animation.RELATIVE_TO_SELF, 0.5f   // Pivot point Y
+        );
+        scaleDown.setDuration(100);
+        scaleDown.setFillAfter(false);
+
+        scaleDown.setAnimationListener(new Animation.AnimationListener() {
+            @Override
+            public void onAnimationStart(Animation animation) {}
+
+            @Override
+            public void onAnimationEnd(Animation animation) {
+                ScaleAnimation scaleUp = new ScaleAnimation(
+                        0.9f, 1.0f,
+                        0.9f, 1.0f,
+                        Animation.RELATIVE_TO_SELF, 0.5f,
+                        Animation.RELATIVE_TO_SELF, 0.5f
+                );
+                scaleUp.setDuration(100);
+                scaleUp.setFillAfter(false);
+                view.startAnimation(scaleUp);
+            }
+
+            @Override
+            public void onAnimationRepeat(Animation animation) {}
+        });
+
+        view.startAnimation(scaleDown);
     }
 
     private void showCategoryMenu(View v, Category category) {
