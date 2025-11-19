@@ -362,6 +362,11 @@ public class DatabaseManager {
         }
     }
 
+    public boolean deleteExportRecord(int recordId) {
+        int rows = db.delete("export_record", "id_record = ?", new String[]{String.valueOf(recordId)});
+        return rows > 0;
+    }
+
     public int getCurrentBatchSaleCount() {
         Cursor cursor = db.rawQuery(
                 "SELECT COUNT(*) FROM sale WHERE id_export = " +

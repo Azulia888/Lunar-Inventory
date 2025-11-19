@@ -54,6 +54,9 @@
         <activity
             android:name=".ExportSalesActivity"
             android:parentActivityName=".MainActivity" />
+        <activity
+            android:name=".ExportHistoryActivity"
+            android:parentActivityName=".MainActivity" />
     </application>
 
 </manifest>

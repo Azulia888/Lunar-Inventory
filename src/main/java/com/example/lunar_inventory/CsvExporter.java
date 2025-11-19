@@ -35,28 +35,84 @@ public class CsvExporter {
             }
 
             File file = new File(exportsDir, generateFilename());
-            FileWriter writer = new FileWriter(file);
-
-            // Write header
-            writer.append("Parent,Name,Individual Price,Number of Sales,Total\n");
-
-            // Write category hierarchy
-            writeCategoryHierarchy(writer, null, itemsByCategory);
-
-            // Write items without category
-            if (itemsByCategory.containsKey(null)) {
-                writeItemsInCategory(writer, "None", itemsByCategory.get(null));
-            }
-
-            writer.flush();
-            writer.close();
+            writeCsvFile(file, itemsByCategory);
 
             Log.d(TAG, "CSV exported successfully to: " + file.getAbsolutePath());
+
+            // Create backup
+            createBackup(file);
+
             return file;
         } catch (IOException e) {
             Log.e(TAG, "Error exporting CSV", e);
             return null;
         }
+    }
+
+    public File createBackupCsv(boolean isCurrentBatch) {
+        try {
+            List<SaleGroup> sales = dbManager.getSalesGroupedForExport(isCurrentBatch);
+            Map<Integer, List<SaleGroup>> itemsByCategory = organizeSalesByCategory(sales);
+
+            File backupDir = new File(context.getFilesDir(), "exports/backup");
+            if (!backupDir.exists()) {
+                backupDir.mkdirs();
+            }
+
+            File backupFile = new File(backupDir, "backup_" + generateFilename());
+            writeCsvFile(backupFile, itemsByCategory);
+
+            Log.d(TAG, "Backup CSV created: " + backupFile.getAbsolutePath());
+            return backupFile;
+        } catch (IOException e) {
+            Log.e(TAG, "Error creating backup CSV", e);
+            return null;
+        }
+    }
+
+    private void createBackup(File originalFile) {
+        try {
+            File backupDir = new File(context.getFilesDir(), "exports/backup");
+            if (!backupDir.exists()) {
+                backupDir.mkdirs();
+            }
+
+            File backupFile = new File(backupDir, "backup_" + originalFile.getName());
+
+            java.io.FileInputStream fis = new java.io.FileInputStream(originalFile);
+            java.io.FileOutputStream fos = new java.io.FileOutputStream(backupFile);
+
+            byte[] buffer = new byte[1024];
+            int length;
+            while ((length = fis.read(buffer)) > 0) {
+                fos.write(buffer, 0, length);
+            }
+
+            fis.close();
+            fos.close();
+
+            Log.d(TAG, "Backup created: " + backupFile.getAbsolutePath());
+        } catch (Exception e) {
+            Log.e(TAG, "Error creating backup", e);
+        }
+    }
+
+    private void writeCsvFile(File file, Map<Integer, List<SaleGroup>> itemsByCategory) throws IOException {
+        FileWriter writer = new FileWriter(file);
+
+        // Write header
+        writer.append("Parent,Name,Individual Price,Number of Sales,Total\n");
+
+        // Write category hierarchy
+        writeCategoryHierarchy(writer, null, itemsByCategory);
+
+        // Write items without category
+        if (itemsByCategory.containsKey(null)) {
+            writeItemsInCategory(writer, "None", itemsByCategory.get(null));
+        }
+
+        writer.flush();
+        writer.close();
     }
 
     private Map<Integer, List<SaleGroup>> organizeSalesByCategory(List<SaleGroup> sales) {

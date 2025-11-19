@@ -221,7 +221,8 @@ public class ExportSalesActivity extends AppCompatActivity implements Navigation
             drawerLayout.closeDrawer(GravityCompat.START);
             return true;
         } else if (id == R.id.nav_export_history) {
-            // TODO: Implement
+            Intent intent = new Intent(this, ExportHistoryActivity.class);
+            startActivity(intent);
         } else if (id == R.id.nav_reset_sales) {
             showResetSalesDialog();
         }
