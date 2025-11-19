@@ -6,7 +6,7 @@ import android.database.sqlite.SQLiteOpenHelper;
 
 public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String DATABASE_NAME = "lunar_inventory.db";
-    private static final int DATABASE_VERSION = 2;
+    private static final int DATABASE_VERSION = 3;
 
     public DatabaseHelper(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
@@ -57,6 +57,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 "id_batch INTEGER," +
                 "format TEXT NOT NULL," +
                 "is_full_export INTEGER DEFAULT 0," +
+                "export_name TEXT," +
                 "FOREIGN KEY(id_batch) REFERENCES sale_batch(id_export))");
 
         // Create initial sale batch
@@ -75,6 +76,9 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                     "format TEXT NOT NULL," +
                     "is_full_export INTEGER DEFAULT 0," +
                     "FOREIGN KEY(id_batch) REFERENCES sale_batch(id_export))");
+        }
+        if (oldVersion < 3) {
+            db.execSQL("ALTER TABLE export_record ADD COLUMN export_name TEXT");
         }
     }
 }

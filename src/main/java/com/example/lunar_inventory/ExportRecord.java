@@ -8,9 +8,10 @@ class ExportRecord {
     public int batchId;
     public String format;
     public boolean isFullExport;
+    public String exportName;
 
     public ExportRecord(int id, String filename, String filepath, String exportTime,
-                        int batchId, String format, boolean isFullExport) {
+                        int batchId, String format, boolean isFullExport, String exportName) {
         this.id = id;
         this.filename = filename;
         this.filepath = filepath;
@@ -18,5 +19,6 @@ class ExportRecord {
         this.batchId = batchId;
         this.format = format;
         this.isFullExport = isFullExport;
+        this.exportName = exportName;
     }
 }

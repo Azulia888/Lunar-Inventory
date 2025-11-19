@@ -100,7 +100,10 @@ public class ExportHistoryActivity extends AppCompatActivity implements Navigati
 
         try {
             PdfExporter pdfExporter = new PdfExporter(this, dbManager);
-            File pdfFile = pdfExporter.exportFromBackupCsv(backupCsv, getReExportFilename(record.filename, "pdf"));
+            String displayName = record.exportName != null && !record.exportName.isEmpty()
+                    ? record.exportName
+                    : extractDateFromFilename(record.filename);
+            File pdfFile = pdfExporter.exportFromBackupCsv(backupCsv, getReExportFilename(record.filename, "pdf"), displayName);
 
             if (pdfFile != null && pdfFile.exists()) {
                 shareFile(pdfFile, "application/pdf");
@@ -113,6 +116,18 @@ public class ExportHistoryActivity extends AppCompatActivity implements Navigati
             Toast.makeText(this, "Error re-exporting PDF", Toast.LENGTH_LONG).show();
         }
     }
+
+    private String extractDateFromFilename(String filename) {
+        if (filename.startsWith("export_")) {
+            String nameWithExt = filename.substring(7);
+            int lastDot = nameWithExt.lastIndexOf('.');
+            if (lastDot > 0) {
+                return nameWithExt.substring(0, lastDot);
+            }
+        }
+        return "Export";
+    }
+
 
     private void reExportAsCsv(ExportRecord record) {
         File backupCsv = new File(getBackupPath(record.filepath));

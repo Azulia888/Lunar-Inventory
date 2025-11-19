@@ -66,7 +66,12 @@ public class ExportHistoryAdapter extends RecyclerView.Adapter<ExportHistoryAdap
     }
 
     private String getExportName(ExportRecord record) {
-        // Extract name from filename
+        // Use custom export name if available
+        if (record.exportName != null && !record.exportName.isEmpty()) {
+            return record.exportName;
+        }
+
+        // Otherwise extract timestamp from filename
         String filename = record.filename;
         if (filename.startsWith("export_")) {
             // Remove "export_" prefix and file extension
@@ -79,6 +84,7 @@ public class ExportHistoryAdapter extends RecyclerView.Adapter<ExportHistoryAdap
         }
         return filename;
     }
+
 
     private String formatDateTime(String dateTime) {
         try {

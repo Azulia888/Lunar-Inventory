@@ -498,13 +498,14 @@ public class DatabaseManager {
                 new Object[]{batchId});
     }
 
-    public long saveExportRecord(String filename, String filepath, Integer batchId, String format, boolean isFullExport) {
+    public long saveExportRecord(String filename, String filepath, Integer batchId, String format, boolean isFullExport, String exportName) {
         ContentValues values = new ContentValues();
         values.put("filename", filename);
         values.put("filepath", filepath);
         if (batchId != null) values.put("id_batch", batchId);
         values.put("format", format);
         values.put("is_full_export", isFullExport ? 1 : 0);
+        values.put("export_name", exportName);
         return db.insert("export_record", null, values);
     }
 
@@ -521,12 +522,15 @@ public class DatabaseManager {
                     cursor.isNull(cursor.getColumnIndexOrThrow("id_batch")) ? -1 :
                             cursor.getInt(cursor.getColumnIndexOrThrow("id_batch")),
                     cursor.getString(cursor.getColumnIndexOrThrow("format")),
-                    cursor.getInt(cursor.getColumnIndexOrThrow("is_full_export")) == 1
+                    cursor.getInt(cursor.getColumnIndexOrThrow("is_full_export")) == 1,
+                    cursor.isNull(cursor.getColumnIndexOrThrow("export_name")) ? null :
+                            cursor.getString(cursor.getColumnIndexOrThrow("export_name"))
             ));
         }
         cursor.close();
         return records;
     }
+
 
 
 }

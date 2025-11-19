@@ -143,9 +143,10 @@ public class ExportSalesActivity extends AppCompatActivity implements Navigation
         Log.d(TAG, "Export generated successfully at: " + exportFile.getAbsolutePath());
         Log.d(TAG, "File exists: " + exportFile.exists() + ", Size: " + exportFile.length() + " bytes");
 
-        // Save export record
+        // Save export record with custom name
+        String exportNameToSave = customName.isEmpty() ? null : customName;
         dbManager.saveExportRecord(exportFile.getName(), exportFile.getAbsolutePath(),
-                isCurrentBatch ? batchId : null, format, !isCurrentBatch);
+                isCurrentBatch ? batchId : null, format, !isCurrentBatch, exportNameToSave);
 
         // Update batch export time
         if (isCurrentBatch) {

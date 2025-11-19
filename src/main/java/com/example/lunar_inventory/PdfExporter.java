@@ -124,7 +124,7 @@ public class PdfExporter {
         }
     }
 
-    public File exportFromBackupCsv(File backupCsv, String filename) {
+    public File exportFromBackupCsv(File backupCsv, String filename, String displayName) {
         document = new PdfDocument();
 
         try {
@@ -141,8 +141,8 @@ public class PdfExporter {
             // Draw header
             paint.setTextSize(18);
             paint.setFakeBoldText(true);
-            float textWidth = paint.measureText("Export Re-generation");
-            canvas.drawText("Export Re-generation", (PAGE_WIDTH - textWidth) / 2, yPos, paint);
+            float textWidth = paint.measureText("Export Re-generation " + displayName);
+            canvas.drawText("Export Re-generation " + displayName, (PAGE_WIDTH - textWidth) / 2, yPos, paint);
             yPos += LINE_HEIGHT * 2;
             paint.setFakeBoldText(false);
 
