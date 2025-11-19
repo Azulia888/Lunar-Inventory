@@ -356,7 +356,23 @@ public class DatabaseManager {
             // Reset all item counters
             db.execSQL("UPDATE item SET total_sold = 0, current_stock = CASE WHEN current_stock = -1 THEN -1 ELSE current_stock + total_sold END");
 
+            this.cleanHidden();
+
             return salesDeleted > 0;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    public boolean cleanHidden(){
+        try {
+            //Remove hidden items with no sales left and which are hidden
+            db.execSQL("DELETE from item where total_sold = 0 and shown = 0");
+
+            //Remove hidden categories
+            db.execSQL("DELETE from category WHERE shown = 0");
+
+            return true;
         } catch (Exception e) {
             return false;
         }
